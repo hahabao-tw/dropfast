@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>跨裝置極速互傳</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+
+  <!-- 密碼登入畫面 -->
+  <div id="loginScreen" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-md space-y-5">
+    <div class="text-center">
+      <h1 class="text-2xl font-bold text-slate-800">🔒 請輸入通行密碼</h1>
+      <p class="text-sm text-slate-500 mt-1">跨裝置檔案與文字中繼站</p>
+    </div>
+    <input type="password" id="pwdInput" class="w-full border rounded-lg p-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" onkeydown="if(event.key==='Enter') login()"/>
+    <p id="loginError" class="text-xs text-red-500 text-center hidden">密碼錯誤，請重新輸入！</p>
+    <button onclick="login()" id="loginBtn" class="w-full py-3 bg-slate-800 text-white font-medium rounded-lg hover:bg-slate-700">解鎖進入</button>
+  </div>
+
+  <!-- 主畫面 -->
+  <div id="mainApp" class="max-w-3xl mx-auto space-y-6 hidden">
+    <div class="bg-white p-6 rounded-xl shadow-sm flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">⚡ 跨裝置檔案 / 文字中繼站</h1>
+        <p class="text-sm text-slate-500">檔案直傳 Google Drive・48小時自動銷毀</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="loadData()" id="refreshBtn" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm hover:bg-slate-700">重新整理</button>
+        <button onclick="logout()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100">鎖定</button>
+      </div>
+    </div>
+
+    <!-- 文字互傳區 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+      <h2 class="font-semibold text-slate-700">📝 快速傳送文字</h2>
+      <textarea id="textInput" rows="3" class="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="在此貼上網址、驗證碼或筆記..."></textarea>
+      <button onclick="sendText()" id="sendTextBtn" class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">傳送文字</button>
+      <div id="textList" class="space-y-2 pt-2"></div>
+    </div>
+
+    <!-- 檔案上傳區 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+      <h2 class="font-semibold text-slate-700">📁 傳送檔案 (不限大小)</h2>
+      <input type="file" id="fileInput" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+      
+      <div id="progressContainer" class="hidden space-y-1">
+        <div class="w-full bg-slate-200 rounded-full h-2.5">
+          <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+        </div>
+        <p id="progressText" class="text-xs text-slate-500 text-right">0%</p>
+      </div>
+
+      <button onclick="uploadFile()" id="uploadBtn" class="w-full py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">開始上傳</button>
+      <div id="fileList" class="space-y-2 pt-2"></div>
+    </div>
+  </div>
+
+  <script>
+    // 👇 請將下方網址換成您的 GAS 網頁應用程式網址 (/exec 結尾)
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby494FfbKlcJaeq56kcGxA3947LspZT4Ft-qdewD5aHGcvQ2z2BCN00q44ajzMWnHM-jw/exec";
+    let currentPwd = localStorage.getItem('dropzone_pwd') || '';
+
+    // 通用 API 呼叫器 (使用 text/plain 避開 CORS 預檢並繞過 Google 帳號衝突)
+    async function callGasApi(payload) {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.status !== 'ok') throw new Error(json.message);
+      return json.data;
+    }
+
+    window.onload = () => {
+      if (currentPwd) verifyAndLoad(currentPwd);
+    };
+
+    function login() {
+      const pwd = document.getElementById('pwdInput').value;
+      if (!pwd) return;
+      document.getElementById('loginBtn').innerText = '驗證中...';
+      document.getElementById('loginError').classList.add('hidden');
+      verifyAndLoad(pwd);
+    }
+
+    async function verifyAndLoad(pwd) {
+      try {
+        const data = await callGasApi({ action: 'getItems', pwd: pwd });
+        currentPwd = pwd;
+        localStorage.setItem('dropzone_pwd', pwd);
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('loginBtn').innerText = '解鎖進入';
+        renderData(data);
+      } catch (err) {
+        localStorage.removeItem('dropzone_pwd');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('loginBtn').innerText = '解鎖進入';
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('dropzone_pwd');
+      currentPwd = '';
+      document.getElementById('pwdInput').value = '';
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+
+    async function loadData() {
+      const btn = document.getElementById('refreshBtn');
+      btn.innerText = '載入中...';
+      const data = await callGasApi({ action: 'getItems', pwd: currentPwd });
+      renderData(data);
+      btn.innerText = '重新整理';
+    }
+
+    function renderData(data) {
+      const textContainer = document.getElementById('textList');
+      textContainer.innerHTML = data.texts.map(item => `
+        <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-start gap-2">
+          <pre class="text-sm text-slate-800 whitespace-pre-wrap break-all font-sans">${escapeHtml(item.text)}</pre>
+          <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.text)}\`)" class="shrink-0 text-xs px-2.5 py-1 bg-white border rounded hover:bg-slate-100">複製</button>
+        </div>
+      `).join('');
+
+      const fileContainer = document.getElementById('fileList');
+      fileContainer.innerHTML = data.files.map(f => `
+        <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-center">
+          <div class="truncate pr-4">
+            <p class="text-sm font-medium text-slate-800 truncate">${escapeHtml(f.name)}</p>
+            <p class="text-xs text-slate-400">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+          <a href="${f.url}" target="_blank" class="shrink-0 text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">下載 / 開啟</a>
+        </div>
+      `).join('');
+    }
+
+    async function sendText() {
+      const input = document.getElementById('textInput');
+      const text = input.value.trim();
+      if (!text) return;
+      document.getElementById('sendTextBtn').innerText = '傳送中...';
+      await callGasApi({ action: 'saveTextItem', text: text, pwd: currentPwd });
+      input.value = '';
+      document.getElementById('sendTextBtn').innerText = '傳送文字';
+      loadData();
+    }
+
+    async function uploadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert('請選擇檔案');
+
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('progressContainer').classList.remove('hidden');
+
+      const config = await callGasApi({ action: 'getUploadConfig', pwd: currentPwd });
+      const metadata = {
+        name: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        parents: [config.folderId]
+      };
+
+      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + config.token,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Upload-Content-Type': file.type || 'application/octet-stream',
+          'X-Upload-Content-Length': file.size
+        },
+        body: JSON.stringify(metadata)
+      });
+
+      const uploadUrl = res.headers.get('Location');
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          document.getElementById('progressBar').style.width = percent + '%';
+          document.getElementById('progressText').innerText = percent + '%';
+        }
+      };
+      xhr.onload = () => {
+        document.getElementById('uploadBtn').disabled = false;
+        document.getElementById('progressContainer').classList.add('hidden');
+        document.getElementById('fileInput').value = '';
+        loadData();
+      };
+      xhr.send(file);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+    }
+  </script>
+</body>
+</html>
