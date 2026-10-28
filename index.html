@@ -8,7 +8,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen p-4 md:p-8">
 
-  <!-- 密碼登入畫面 -->
+  <!-- 🔒 密碼登入畫面 -->
   <div id="loginScreen" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-md space-y-5">
     <div class="text-center">
       <h1 class="text-2xl font-bold text-slate-800">🔒 請輸入通行密碼</h1>
@@ -19,16 +19,17 @@
     <button onclick="login()" id="loginBtn" class="w-full py-3 bg-slate-800 text-white font-medium rounded-lg hover:bg-slate-700">解鎖進入</button>
   </div>
 
-  <!-- 主畫面 -->
+  <!-- ⚡ 主畫面 -->
   <div id="mainApp" class="max-w-3xl mx-auto space-y-6 hidden">
-    <div class="bg-white p-6 rounded-xl shadow-sm flex justify-between items-center">
+    <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-800">⚡ 跨裝置檔案 / 文字中繼站</h1>
         <p class="text-sm text-slate-500">檔案直傳 Google Drive・48小時自動銷毀</p>
       </div>
-      <div class="flex gap-2">
-        <button onclick="loadData()" id="refreshBtn" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm hover:bg-slate-700">重新整理</button>
-        <button onclick="logout()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100">鎖定</button>
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+        <button onclick="loadData()" id="refreshBtn" class="px-3.5 py-2 bg-slate-800 text-white rounded-lg text-sm hover:bg-slate-700">重新整理</button>
+        <button onclick="clearAll()" id="clearAllBtn" class="px-3.5 py-2 bg-rose-600 text-white rounded-lg text-sm hover:bg-rose-700">🗑️ 立即清空全部</button>
+        <button onclick="logout()" class="px-3 py-2 bg-slate-100 text-slate-600 border rounded-lg text-sm hover:bg-slate-200">鎖定</button>
       </div>
     </div>
 
@@ -58,53 +59,81 @@
   </div>
 
   <script>
-    // 👇 請將下方網址換成您的 GAS 網頁應用程式網址 (/exec 結尾)
+    // 👇 請務必將下方網址替換為您的 GAS 網頁應用程式網址 (/exec 結尾)
     const GAS_URL = "https://script.google.com/macros/s/AKfycby494FfbKlcJaeq56kcGxA3947LspZT4Ft-qdewD5aHGcvQ2z2BCN00q44ajzMWnHM-jw/exec";
-    let currentPwd = localStorage.getItem('dropzone_pwd') || '';
+    
+    // 使用 sessionStorage：同一分頁整理時保留，關閉分頁即自動清除密碼
+    let currentPwd = sessionStorage.getItem('dropzone_pwd') || '';
 
-    // 通用 API 呼叫器 (使用 text/plain 避開 CORS 預檢並繞過 Google 帳號衝突)
     async function callGasApi(payload) {
       const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-      const json = await res.json();
-      if (json.status !== 'ok') throw new Error(json.message);
+      
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error("後端未正確回應 JSON，請確認 GAS 已建立新版本部署");
+      }
+
+      if (json.status !== 'ok' || !json.data) {
+        throw new Error(json.message || "驗證失敗");
+      }
       return json.data;
     }
 
     window.onload = () => {
-      if (currentPwd) verifyAndLoad(currentPwd);
+      localStorage.removeItem('dropzone_pwd'); // 清除舊版殘留密碼
+      if (currentPwd && currentPwd.trim() !== '') {
+        document.getElementById('loginBtn').innerText = '自動登入驗證中...';
+        document.getElementById('loginBtn').disabled = true;
+        verifyAndLoad(currentPwd);
+      }
     };
 
     function login() {
-      const pwd = document.getElementById('pwdInput').value;
+      const pwd = document.getElementById('pwdInput').value.trim();
       if (!pwd) return;
       document.getElementById('loginBtn').innerText = '驗證中...';
+      document.getElementById('loginBtn').disabled = true;
       document.getElementById('loginError').classList.add('hidden');
       verifyAndLoad(pwd);
     }
 
     async function verifyAndLoad(pwd) {
       try {
+        if (!pwd) throw new Error("密碼不可為空");
         const data = await callGasApi({ action: 'getItems', pwd: pwd });
+        
+        if (!data || !Array.isArray(data.files)) {
+          throw new Error("資料驗證異常");
+        }
+
         currentPwd = pwd;
-        localStorage.setItem('dropzone_pwd', pwd);
+        sessionStorage.setItem('dropzone_pwd', pwd);
+        
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         document.getElementById('loginBtn').innerText = '解鎖進入';
+        document.getElementById('loginBtn').disabled = false;
         renderData(data);
       } catch (err) {
-        localStorage.removeItem('dropzone_pwd');
+        sessionStorage.removeItem('dropzone_pwd');
+        currentPwd = '';
         document.getElementById('loginScreen').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
         document.getElementById('loginBtn').innerText = '解鎖進入';
+        document.getElementById('loginBtn').disabled = false;
         document.getElementById('loginError').classList.remove('hidden');
       }
     }
 
     function logout() {
+      sessionStorage.removeItem('dropzone_pwd');
       localStorage.removeItem('dropzone_pwd');
       currentPwd = '';
       document.getElementById('pwdInput').value = '';
@@ -120,25 +149,68 @@
       btn.innerText = '重新整理';
     }
 
+    // 立即清空所有檔案與文字
+    async function clearAll() {
+      if (!confirm('確定要立即清除雲端中繼站上的「所有檔案與文字紀錄」嗎？')) return;
+      const btn = document.getElementById('clearAllBtn');
+      btn.innerText = '清除中...';
+      btn.disabled = true;
+      try {
+        const data = await callGasApi({ action: 'clearAllItems', pwd: currentPwd });
+        renderData(data);
+      } catch (err) {
+        alert('清除失敗：' + err.message);
+      }
+      btn.innerText = '🗑️ 立即清空全部';
+      btn.disabled = false;
+    }
+
+    // 單筆刪除檔案
+    async function deleteFile(fileId) {
+      if (!confirm('確定要刪除此檔案嗎？')) return;
+      const data = await callGasApi({ action: 'deleteFileItem', fileId: fileId, pwd: currentPwd });
+      renderData(data);
+    }
+
+    // 單筆刪除文字
+    async function deleteText(textId) {
+      const data = await callGasApi({ action: 'deleteTextItem', textId: textId, pwd: currentPwd });
+      renderData(data);
+    }
+
     function renderData(data) {
       const textContainer = document.getElementById('textList');
-      textContainer.innerHTML = data.texts.map(item => `
-        <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-start gap-2">
-          <pre class="text-sm text-slate-800 whitespace-pre-wrap break-all font-sans">${escapeHtml(item.text)}</pre>
-          <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.text)}\`)" class="shrink-0 text-xs px-2.5 py-1 bg-white border rounded hover:bg-slate-100">複製</button>
-        </div>
-      `).join('');
+      if (data.texts.length === 0) {
+        textContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">目前無文字紀錄</p>`;
+      } else {
+        textContainer.innerHTML = data.texts.map(item => `
+          <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-start gap-2">
+            <pre class="text-sm text-slate-800 whitespace-pre-wrap break-all font-sans">${escapeHtml(item.text)}</pre>
+            <div class="flex gap-1.5 shrink-0">
+              <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.text)}\`)" class="text-xs px-2.5 py-1 bg-white border rounded hover:bg-slate-100">複製</button>
+              <button onclick="deleteText('${item.id}')" class="text-xs px-2 py-1 bg-white border border-rose-200 text-rose-600 rounded hover:bg-rose-50">刪除</button>
+            </div>
+          </div>
+        `).join('');
+      }
 
       const fileContainer = document.getElementById('fileList');
-      fileContainer.innerHTML = data.files.map(f => `
-        <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-center">
-          <div class="truncate pr-4">
-            <p class="text-sm font-medium text-slate-800 truncate">${escapeHtml(f.name)}</p>
-            <p class="text-xs text-slate-400">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+      if (data.files.length === 0) {
+        fileContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">目前無暫存檔案</p>`;
+      } else {
+        fileContainer.innerHTML = data.files.map(f => `
+          <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-center gap-2">
+            <div class="truncate pr-2">
+              <p class="text-sm font-medium text-slate-800 truncate">${escapeHtml(f.name)}</p>
+              <p class="text-xs text-slate-400">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+            <div class="flex gap-1.5 shrink-0">
+              <a href="${f.url}" target="_blank" class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">下載 / 開啟</a>
+              <button onclick="deleteFile('${f.id}')" class="text-xs px-2.5 py-1.5 bg-white border border-rose-200 text-rose-600 rounded hover:bg-rose-50">刪除</button>
+            </div>
           </div>
-          <a href="${f.url}" target="_blank" class="shrink-0 text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">下載 / 開啟</a>
-        </div>
-      `).join('');
+        `).join('');
+      }
     }
 
     async function sendText() {
