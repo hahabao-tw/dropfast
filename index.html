@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-      background-color: #e2e8f0; /* 加深背景霧灰藍，突顯白色卡片立體感 */
+      background-color: #e2e8f0;
       color: #1d1d1f;
     }
     .apple-header {
@@ -20,14 +20,14 @@
       background: #ffffff;
       border-radius: 22px;
       border: 2px solid #cbd5e1;
-      border-top: 6px solid #0071e3; /* Apple 藍頂部識別條 */
+      border-top: 6px solid #0071e3;
       box-shadow: 0 8px 24px rgba(0, 50, 120, 0.06);
     }
     .section-file {
       background: #ffffff;
       border-radius: 22px;
       border: 2px solid #cbd5e1;
-      border-top: 6px solid #10b981; /* 翡翠綠頂部識別條 */
+      border-top: 6px solid #10b981;
       box-shadow: 0 8px 24px rgba(0, 90, 60, 0.06);
     }
     .apple-input {
@@ -54,7 +54,7 @@
           <span class="text-2xl">⚡</span>
           <h1 class="text-2xl font-bold tracking-tight">DropZone</h1>
         </div>
-        <p class="text-xs text-zinc-400 mt-1">跨裝置雲端中繼站 ・ 6 小時自動銷毀</p>
+        <p class="text-xs text-zinc-400 mt-1">跨裝置雲端中繼站 ・ 單檔上限 1TB ・ 6 小時自動銷毀</p>
       </div>
       <div class="flex items-center gap-2.5 w-full sm:w-auto">
         <button onclick="loadData()" id="refreshBtn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur transition">🔄 重新整理</button>
@@ -101,11 +101,11 @@
         <div class="flex items-center gap-3">
           <span class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shadow-sm">📁</span>
           <div>
-            <h2 class="text-lg font-bold text-slate-900">檔案傳輸專區 (不限大小)</h2>
+            <h2 class="text-lg font-bold text-slate-900">檔案傳輸專區 (單檔上限 1TB)</h2>
             <p class="text-xs text-slate-500">直傳 Google Drive 雲端硬碟</p>
           </div>
         </div>
-        <span class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">FILE</span>
+        <span class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">MAX 1TB</span>
       </div>
 
       <!-- 檔案上傳內艙 -->
@@ -144,10 +144,22 @@
     // 💡 請在此填入您的 GAS 部署網址 (/exec 結尾)
     const GAS_URL = "https://script.google.com/macros/s/AKfycby494FfbKlcJaeq56kcGxA3947LspZT4Ft-qdewD5aHGcvQ2z2BCN00q44ajzMWnHM-jw/exec";
 
-    // 紀錄已在當前頁面解鎖過的文字內容，避免重新渲染時又被鎖上
+    // 單檔大小上限設定：1TB (1,099,511,627,776 Bytes)
+    const MAX_FILE_SIZE = 1024 * 1024 * 1024 * 1024;
+
+    // 紀錄已在當前頁面解鎖過的文字內容
     const unlockedTextsCache = {};
 
     window.onload = loadData;
+
+    // 自動格式化檔案大小 (B / KB / MB / GB / TB)
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
     async function callGasApi(payload) {
       const res = await fetch(GAS_URL, {
@@ -190,7 +202,6 @@
         textContainer.innerHTML = `<div class="p-6 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-400 text-center">目前沒有文字紀錄</div>`;
       } else {
         textContainer.innerHTML = texts.map(item => {
-          // 檢查是否已經在前端解鎖過
           const displayContent = unlockedTextsCache[item.id] !== undefined ? unlockedTextsCache[item.id] : item.content;
 
           if (item.hasPassword && displayContent === null) {
@@ -236,7 +247,7 @@
                 <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(f.name)}</p>
                 ${f.hasPassword ? '<span class="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">需密碼</span>' : ''}
               </div>
-              <p class="text-xs text-slate-400 mt-1 pl-6">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p class="text-xs text-slate-400 mt-1 pl-6">${formatBytes(f.size)}</p>
             </div>
             <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
               ${f.hasPassword ? `<input type="password" id="filepwd-${f.id}" class="apple-input px-3 py-1.5 text-xs w-32" placeholder="輸入下載密碼" onkeydown="if(event.key==='Enter') downloadFile('${f.id}', true)">` : ''}
@@ -283,7 +294,6 @@
       btn.disabled = false;
     }
 
-    // 修正版：解鎖文字後直接寫入前端快取並當場展開明文
     async function unlockText(id) {
       const pwdInput = document.getElementById(`pwd-${id}`);
       const btn = document.getElementById(`unlockBtn-${id}`);
@@ -295,9 +305,9 @@
 
       try {
         const content = await callGasApi({ action: 'unlockText', id: id, password: password });
-        unlockedTextsCache[id] = content; // 將解開的明文存入快取
+        unlockedTextsCache[id] = content;
         const data = await callGasApi({ action: 'getItems' });
-        renderData(data); // 重新渲染時會直接顯示快取內的明文
+        renderData(data);
       } catch (err) {
         alert('解鎖失敗：' + err.message);
         btn.innerText = '解鎖查看';
@@ -305,7 +315,6 @@
       }
     }
 
-    // 修正版：直接由欄位讀取密碼並取得已授權的無障礙下載網址
     async function downloadFile(fileId, hasPassword) {
       let password = "";
       if (hasPassword) {
@@ -335,6 +344,12 @@
       const pwdInput = document.getElementById('filePassword');
       const file = fileInput.files[0];
       if (!file) return alert('請先選擇檔案');
+
+      // 🔒 檢查單檔 1TB 上限
+      if (file.size > MAX_FILE_SIZE) {
+        fileInput.value = '';
+        return alert(`檔案大小 (${formatBytes(file.size)}) 超過單檔 1TB 上限，無法上傳！`);
+      }
 
       const uploadBtn = document.getElementById('uploadBtn');
       const progressContainer = document.getElementById('progressContainer');
@@ -372,7 +387,7 @@
             if (e.lengthComputable) {
               const percent = Math.round((e.loaded / e.total) * 100);
               progressBar.style.width = percent + '%';
-              progressText.innerText = percent + '%';
+              progressText.innerText = `${percent}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
             }
           };
           xhr.onload = async () => {
