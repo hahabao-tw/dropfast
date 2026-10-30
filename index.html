@@ -1,69 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>跨裝置極速互傳</title>
+  <title>DropZone 跨裝置互傳</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+    }
+    .apple-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    }
+    .apple-btn {
+      background-color: #000000;
+      color: #ffffff;
+      border-radius: 980px;
+      transition: all 0.2s ease;
+    }
+    .apple-btn:hover {
+      background-color: #333333;
+    }
+    .apple-input {
+      background: #f5f5f7;
+      border: 1px solid #d2d2d7;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+    .apple-input:focus {
+      background: #ffffff;
+      border-color: #0071e3;
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+    }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+<body class="min-h-screen py-8 px-4 sm:px-6">
 
-  <!-- 🔒 密碼登入畫面 -->
-  <div id="loginScreen" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-md space-y-5">
-    <div class="text-center">
-      <h1 class="text-2xl font-bold text-slate-800">🔒 請輸入通行密碼</h1>
-      <p class="text-sm text-slate-500 mt-1">跨裝置檔案與文字中繼站</p>
-    </div>
-    <input type="password" id="pwdInput" class="w-full border rounded-lg p-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" onkeydown="if(event.key==='Enter') login()"/>
-    <p id="loginError" class="text-xs text-red-500 text-center hidden">密碼錯誤，請重新輸入！</p>
-    <button onclick="login()" id="loginBtn" class="w-full py-3 bg-slate-800 text-white font-medium rounded-lg hover:bg-slate-700">解鎖進入</button>
-  </div>
-
-  <!-- ⚡ 主畫面 -->
-  <div id="mainApp" class="max-w-3xl mx-auto space-y-6 hidden">
-    <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+  <div class="max-w-2xl mx-auto space-y-6">
+    <!-- 頂部標題列 -->
+    <div class="apple-card p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">⚡ 跨裝置檔案 / 文字中繼站</h1>
-        <p class="text-sm text-slate-500">檔案直傳 Google Drive・48小時自動銷毀</p>
+        <h1 class="text-2xl font-semibold tracking-tight text-zinc-900">DropZone</h1>
+        <p class="text-sm text-zinc-500 mt-0.5">極速跨裝置中繼站 ・ 6 小時自動銷毀</p>
       </div>
-      <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
-        <button onclick="loadData()" id="refreshBtn" class="px-3.5 py-2 bg-slate-800 text-white rounded-lg text-sm hover:bg-slate-700">重新整理</button>
-        <button onclick="clearAll()" id="clearAllBtn" class="px-3.5 py-2 bg-rose-600 text-white rounded-lg text-sm hover:bg-rose-700">🗑️ 立即清空全部</button>
-        <button onclick="logout()" class="px-3 py-2 bg-slate-100 text-slate-600 border rounded-lg text-sm hover:bg-slate-200">鎖定</button>
+      <div class="flex items-center gap-2.5 w-full sm:w-auto">
+        <button onclick="loadData()" id="refreshBtn" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-full transition-colors">重新整理</button>
+        <button onclick="clearAll()" id="clearAllBtn" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-full transition-colors">清空全部</button>
       </div>
     </div>
 
-    <!-- 文字互傳區 -->
-    <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
-      <h2 class="font-semibold text-slate-700">📝 快速傳送文字</h2>
-      <textarea id="textInput" rows="3" class="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="在此貼上網址、驗證碼或筆記..."></textarea>
-      <button onclick="sendText()" id="sendTextBtn" class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">傳送文字</button>
-      <div id="textList" class="space-y-2 pt-2"></div>
-    </div>
-
-    <!-- 檔案上傳區 -->
-    <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
-      <h2 class="font-semibold text-slate-700">📁 傳送檔案 (不限大小)</h2>
-      <input type="file" id="fileInput" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+    <!-- 文字傳送區 -->
+    <div class="apple-card p-6 sm:p-8 space-y-4">
+      <h2 class="text-lg font-medium text-zinc-900">📝 傳送文字</h2>
+      <textarea id="textInput" rows="3" class="apple-input w-full p-3.5 text-sm text-zinc-800 placeholder-zinc-400 resize-none" placeholder="輸入要跨裝置同步的文字或連結..."></textarea>
       
-      <div id="progressContainer" class="hidden space-y-1">
-        <div class="w-full bg-slate-200 rounded-full h-2.5">
-          <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        <input type="password" id="textPassword" class="apple-input px-3.5 py-2 text-sm text-zinc-800 placeholder-zinc-400 sm:w-48" placeholder="設定密碼鎖 (選填)">
+        <button onclick="sendText()" id="sendTextBtn" class="apple-btn px-6 py-2.5 text-sm font-medium">傳送文字</button>
+      </div>
+      
+      <div id="textList" class="space-y-3 pt-4 border-t border-zinc-100"></div>
+    </div>
+
+    <!-- 檔案傳送區 -->
+    <div class="apple-card p-6 sm:p-8 space-y-4">
+      <h2 class="text-lg font-medium text-zinc-900">📁 傳送檔案</h2>
+      <input type="file" id="fileInput" class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-800 hover:file:bg-zinc-200 cursor-pointer"/>
+      
+      <div id="progressContainer" class="hidden space-y-2">
+        <div class="w-full bg-zinc-100 rounded-full h-2 overflow-hidden">
+          <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <p id="progressText" class="text-xs text-slate-500 text-right">0%</p>
+        <p id="progressText" class="text-xs text-zinc-400 text-right">0%</p>
       </div>
 
-      <button onclick="uploadFile()" id="uploadBtn" class="w-full py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">開始上傳</button>
-      <div id="fileList" class="space-y-2 pt-2"></div>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        <input type="password" id="filePassword" class="apple-input px-3.5 py-2 text-sm text-zinc-800 placeholder-zinc-400 sm:w-48" placeholder="設定密碼鎖 (選填)">
+        <button onclick="uploadFile()" id="uploadBtn" class="apple-btn px-6 py-2.5 text-sm font-medium">開始上傳</button>
+      </div>
+
+      <div id="fileList" class="space-y-3 pt-4 border-t border-zinc-100"></div>
     </div>
   </div>
 
   <script>
-    // 👇 請務必將下方網址替換為您的 GAS 網頁應用程式網址 (/exec 結尾)
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby494FfbKlcJaeq56kcGxA3947LspZT4Ft-qdewD5aHGcvQ2z2BCN00q44ajzMWnHM-jw/exec";
-    
-    // 使用 sessionStorage：同一分頁整理時保留，關閉分頁即自動清除密碼
-    let currentPwd = sessionStorage.getItem('dropzone_pwd') || '';
+    // 💡 請在此填入您的 GAS 部署網址 (/exec 結尾)
+    const GAS_URL = "https://script.google.com/macros/s/請替換為您的GAS網址代碼/exec";
+
+    window.onload = loadData;
 
     async function callGasApi(payload) {
       const res = await fetch(GAS_URL, {
@@ -71,142 +101,86 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-      
       const text = await res.text();
       let json;
       try {
         json = JSON.parse(text);
       } catch (e) {
-        throw new Error("後端未正確回應 JSON，請確認 GAS 已建立新版本部署");
+        throw new Error("後端回應格式錯誤，請確認 GAS 是否已建立新版本部署");
       }
-
-      if (json.status !== 'ok' || !json.data) {
-        throw new Error(json.message || "驗證失敗");
-      }
+      if (json.status !== 'ok') throw new Error(json.message);
       return json.data;
-    }
-
-    window.onload = () => {
-      localStorage.removeItem('dropzone_pwd'); // 清除舊版殘留密碼
-      if (currentPwd && currentPwd.trim() !== '') {
-        document.getElementById('loginBtn').innerText = '自動登入驗證中...';
-        document.getElementById('loginBtn').disabled = true;
-        verifyAndLoad(currentPwd);
-      }
-    };
-
-    function login() {
-      const pwd = document.getElementById('pwdInput').value.trim();
-      if (!pwd) return;
-      document.getElementById('loginBtn').innerText = '驗證中...';
-      document.getElementById('loginBtn').disabled = true;
-      document.getElementById('loginError').classList.add('hidden');
-      verifyAndLoad(pwd);
-    }
-
-    async function verifyAndLoad(pwd) {
-      try {
-        if (!pwd) throw new Error("密碼不可為空");
-        const data = await callGasApi({ action: 'getItems', pwd: pwd });
-        
-        if (!data || !Array.isArray(data.files)) {
-          throw new Error("資料驗證異常");
-        }
-
-        currentPwd = pwd;
-        sessionStorage.setItem('dropzone_pwd', pwd);
-        
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        document.getElementById('loginBtn').innerText = '解鎖進入';
-        document.getElementById('loginBtn').disabled = false;
-        renderData(data);
-      } catch (err) {
-        sessionStorage.removeItem('dropzone_pwd');
-        currentPwd = '';
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('mainApp').classList.add('hidden');
-        document.getElementById('loginBtn').innerText = '解鎖進入';
-        document.getElementById('loginBtn').disabled = false;
-        document.getElementById('loginError').classList.remove('hidden');
-      }
-    }
-
-    function logout() {
-      sessionStorage.removeItem('dropzone_pwd');
-      localStorage.removeItem('dropzone_pwd');
-      currentPwd = '';
-      document.getElementById('pwdInput').value = '';
-      document.getElementById('mainApp').classList.add('hidden');
-      document.getElementById('loginScreen').classList.remove('hidden');
     }
 
     async function loadData() {
       const btn = document.getElementById('refreshBtn');
-      btn.innerText = '載入中...';
-      const data = await callGasApi({ action: 'getItems', pwd: currentPwd });
-      renderData(data);
+      btn.innerText = '同步中...';
+      try {
+        const data = await callGasApi({ action: 'getItems' });
+        renderData(data);
+      } catch (err) {
+        alert('載入失敗：' + err.message);
+      }
       btn.innerText = '重新整理';
     }
 
-    // 立即清空所有檔案與文字
-    async function clearAll() {
-      if (!confirm('確定要立即清除雲端中繼站上的「所有檔案與文字紀錄」嗎？')) return;
-      const btn = document.getElementById('clearAllBtn');
-      btn.innerText = '清除中...';
-      btn.disabled = true;
-      try {
-        const data = await callGasApi({ action: 'clearAllItems', pwd: currentPwd });
-        renderData(data);
-      } catch (err) {
-        alert('清除失敗：' + err.message);
-      }
-      btn.innerText = '🗑️ 立即清空全部';
-      btn.disabled = false;
-    }
-
-    // 單筆刪除檔案
-    async function deleteFile(fileId) {
-      if (!confirm('確定要刪除此檔案嗎？')) return;
-      const data = await callGasApi({ action: 'deleteFileItem', fileId: fileId, pwd: currentPwd });
-      renderData(data);
-    }
-
-    // 單筆刪除文字
-    async function deleteText(textId) {
-      const data = await callGasApi({ action: 'deleteTextItem', textId: textId, pwd: currentPwd });
-      renderData(data);
-    }
-
-    function renderData(data) {
+    function renderData(items) {
       const textContainer = document.getElementById('textList');
-      if (data.texts.length === 0) {
-        textContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">目前無文字紀錄</p>`;
+      const fileContainer = document.getElementById('fileList');
+
+      const texts = items.filter(i => i.type === 'text');
+      const files = items.filter(i => i.type === 'file');
+
+      // 渲染文字列表
+      if (texts.length === 0) {
+        textContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">目前沒有文字紀錄</p>`;
       } else {
-        textContainer.innerHTML = data.texts.map(item => `
-          <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-start gap-2">
-            <pre class="text-sm text-slate-800 whitespace-pre-wrap break-all font-sans">${escapeHtml(item.text)}</pre>
-            <div class="flex gap-1.5 shrink-0">
-              <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.text)}\`)" class="text-xs px-2.5 py-1 bg-white border rounded hover:bg-slate-100">複製</button>
-              <button onclick="deleteText('${item.id}')" class="text-xs px-2 py-1 bg-white border border-rose-200 text-rose-600 rounded hover:bg-rose-50">刪除</button>
-            </div>
-          </div>
-        `).join('');
+        textContainer.innerHTML = texts.map(item => {
+          if (item.hasPassword && !item.content) {
+            // 需要密碼解鎖的狀態
+            return `
+              <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="flex items-center gap-2 text-zinc-500 text-sm">
+                  <span>🔒</span>
+                  <span>此文字受到密碼保護</span>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <input type="password" id="pwd-${item.id}" class="apple-input px-3 py-1.5 text-xs sm:w-32" placeholder="輸入解鎖密碼">
+                  <button onclick="unlockText('${item.id}')" class="px-3 py-1.5 bg-zinc-900 text-white text-xs rounded-xl hover:bg-zinc-800">解鎖</button>
+                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
+                </div>
+              </div>
+            `;
+          } else {
+            // 已解鎖或無密碼
+            return `
+              <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <pre class="text-sm text-zinc-800 whitespace-pre-wrap break-all font-sans flex-1">${escapeHtml(item.content)}</pre>
+                <div class="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
+                  <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.content)}\`).then(()=>alert('已複製到剪貼簿'))" class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-xl hover:bg-zinc-100">複製</button>
+                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
       }
 
-      const fileContainer = document.getElementById('fileList');
-      if (data.files.length === 0) {
-        fileContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">目前無暫存檔案</p>`;
+      // 渲染檔案列表
+      if (files.length === 0) {
+        fileContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">目前沒有暫存檔案</p>`;
       } else {
-        fileContainer.innerHTML = data.files.map(f => `
-          <div class="p-3 bg-slate-50 rounded-lg border flex justify-between items-center gap-2">
+        fileContainer.innerHTML = files.map(f => `
+          <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div class="truncate pr-2">
-              <p class="text-sm font-medium text-slate-800 truncate">${escapeHtml(f.name)}</p>
-              <p class="text-xs text-slate-400">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p class="text-sm font-medium text-zinc-800 truncate flex items-center gap-1.5">
+                ${f.hasPassword ? '🔒' : ''} ${escapeHtml(f.name)}
+              </p>
+              <p class="text-xs text-zinc-400 mt-0.5">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
-            <div class="flex gap-1.5 shrink-0">
-              <a href="${f.url}" target="_blank" class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">下載 / 開啟</a>
-              <button onclick="deleteFile('${f.id}')" class="text-xs px-2.5 py-1.5 bg-white border border-rose-200 text-rose-600 rounded hover:bg-rose-50">刪除</button>
+            <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+              <button onclick="downloadFile('${f.id}', ${f.hasPassword})" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl transition-colors">下載檔案</button>
+              <button onclick="deleteItem('${f.id}', 'file')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
             </div>
           </div>
         `).join('');
@@ -215,60 +189,157 @@
 
     async function sendText() {
       const input = document.getElementById('textInput');
+      const pwdInput = document.getElementById('textPassword');
       const text = input.value.trim();
-      if (!text) return;
-      document.getElementById('sendTextBtn').innerText = '傳送中...';
-      await callGasApi({ action: 'saveTextItem', text: text, pwd: currentPwd });
-      input.value = '';
-      document.getElementById('sendTextBtn').innerText = '傳送文字';
-      loadData();
+      if (!text) return alert('請輸入文字內容');
+      
+      const btn = document.getElementById('sendTextBtn');
+      btn.innerText = '傳送中...';
+      btn.disabled = true;
+
+      try {
+        const items = await callGasApi({ 
+          action: 'saveTextItem', 
+          text: text, 
+          password: pwdInput.value.trim() 
+        });
+        input.value = '';
+        pwdInput.value = '';
+        renderData(items);
+      } catch (err) {
+        alert('傳送失敗：' + err.message);
+      }
+      btn.innerText = '傳送文字';
+      btn.disabled = false;
+    }
+
+    async function unlockText(id) {
+      const pwdInput = document.getElementById(`pwd-${id}`);
+      const password = pwdInput.value.trim();
+      if (!password) return alert('請輸入解鎖密碼');
+
+      try {
+        const content = await callGasApi({ action: 'unlockText', id: id, password: password });
+        // 直接重新整理列表以顯示解鎖後的內容
+        loadData();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function downloadFile(fileId, hasPassword) {
+      let password = "";
+      if (hasPassword) {
+        password = prompt("此檔案受密碼保護，請輸入下載密碼：");
+        if (password === null) return; // 取消
+      }
+
+      try {
+        const url = await callGasApi({ action: 'getFileUrl', fileId: fileId, password: password });
+        window.open(url, '_blank');
+      } catch (err) {
+        alert('下載失敗：' + err.message);
+      }
     }
 
     async function uploadFile() {
-      const file = document.getElementById('fileInput').files[0];
-      if (!file) return alert('請選擇檔案');
+      const fileInput = document.getElementById('fileInput');
+      const pwdInput = document.getElementById('filePassword');
+      const file = fileInput.files[0];
+      if (!file) return alert('請先選擇檔案');
 
-      document.getElementById('uploadBtn').disabled = true;
-      document.getElementById('progressContainer').classList.remove('hidden');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
 
-      const config = await callGasApi({ action: 'getUploadConfig', pwd: currentPwd });
-      const metadata = {
-        name: file.name,
-        mimeType: file.type || 'application/octet-stream',
-        parents: [config.folderId]
-      };
+      uploadBtn.disabled = true;
+      progressContainer.classList.remove('hidden');
 
-      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + config.token,
-          'Content-Type': 'application/json; charset=UTF-8',
-          'X-Upload-Content-Type': file.type || 'application/octet-stream',
-          'X-Upload-Content-Length': file.size
-        },
-        body: JSON.stringify(metadata)
-      });
+      try {
+        const config = await callGasApi({ action: 'getUploadConfig' });
+        const metadata = {
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          parents: [config.folderId]
+        };
 
-      const uploadUrl = res.headers.get('Location');
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl, true);
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percent = Math.round((e.loaded / e.total) * 100);
-          document.getElementById('progressBar').style.width = percent + '%';
-          document.getElementById('progressText').innerText = percent + '%';
-        }
-      };
-      xhr.onload = () => {
-        document.getElementById('uploadBtn').disabled = false;
-        document.getElementById('progressContainer').classList.add('hidden');
-        document.getElementById('fileInput').value = '';
-        loadData();
-      };
-      xhr.send(file);
+        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + config.token,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'X-Upload-Content-Type': file.type || 'application/octet-stream',
+            'X-Upload-Content-Length': file.size
+          },
+          body: JSON.stringify(metadata)
+        });
+
+        const uploadUrl = res.headers.get('Location');
+        
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', uploadUrl, true);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              progressBar.style.width = percent + '%';
+              progressText.innerText = percent + '%';
+            }
+          };
+          xhr.onload = async () => {
+            if (xhr.status === 200 || xhr.status === 201) {
+              const fileData = JSON.parse(xhr.responseText);
+              const items = await callGasApi({
+                action: 'registerFile',
+                fileId: fileData.id,
+                fileName: file.name,
+                fileSize: file.size,
+                password: pwdInput.value.trim()
+              });
+              renderData(items);
+              fileInput.value = '';
+              pwdInput.value = '';
+              resolve();
+            } else {
+              reject(new Error('上傳失敗'));
+            }
+          };
+          xhr.onerror = () => reject(new Error('網路連線異常'));
+          xhr.send(file);
+        });
+
+      } catch (err) {
+        alert('上傳失敗：' + err.message);
+      } finally {
+        uploadBtn.disabled = false;
+        progressContainer.classList.add('hidden');
+        progressBar.style.width = '0%';
+      }
+    }
+
+    async function clearAll() {
+      if (!confirm('確定要清空雲端中繼站上的所有內容嗎？')) return;
+      try {
+        const items = await callGasApi({ action: 'clearAllItems' });
+        renderData(items);
+      } catch (err) {
+        alert('清除失敗：' + err.message);
+      }
+    }
+
+    async function deleteItem(id, type) {
+      if (!confirm('確定要刪除此項目嗎？')) return;
+      try {
+        const items = await callGasApi({ action: 'deleteItem', id: id, type: type });
+        renderData(items);
+      } catch (err) {
+        alert('刪除失敗：' + err.message);
+      }
     }
 
     function escapeHtml(str) {
+      if (!str) return '';
       return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
     }
   </script>
