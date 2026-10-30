@@ -7,33 +7,36 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background-color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background-color: #e2e8f0; /* 加深背景霧灰藍，突顯白色卡片立體感 */
       color: #1d1d1f;
     }
-    .apple-card {
+    .apple-header {
+      background: linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%);
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    .section-text {
       background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+      border-radius: 22px;
+      border: 2px solid #cbd5e1;
+      border-top: 6px solid #0071e3; /* Apple 藍頂部識別條 */
+      box-shadow: 0 8px 24px rgba(0, 50, 120, 0.06);
     }
-    .apple-btn {
-      background-color: #000000;
-      color: #ffffff;
-      border-radius: 980px;
-      transition: all 0.2s ease;
-    }
-    .apple-btn:hover {
-      background-color: #333333;
+    .section-file {
+      background: #ffffff;
+      border-radius: 22px;
+      border: 2px solid #cbd5e1;
+      border-top: 6px solid #10b981; /* 翡翠綠頂部識別條 */
+      box-shadow: 0 8px 24px rgba(0, 90, 60, 0.06);
     }
     .apple-input {
-      background: #f5f5f7;
-      border: 1px solid #d2d2d7;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
       border-radius: 12px;
       transition: all 0.2s ease;
     }
     .apple-input:focus {
-      background: #ffffff;
       border-color: #0071e3;
       outline: none;
       box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
@@ -42,56 +45,107 @@
 </head>
 <body class="min-h-screen py-8 px-4 sm:px-6">
 
-  <div class="max-w-2xl mx-auto space-y-6">
-    <!-- 頂部標題列 -->
-    <div class="apple-card p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+  <div class="max-w-3xl mx-auto space-y-8">
+    
+    <!-- 頂部深色導覽列 -->
+    <div class="apple-header p-6 sm:p-7 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-zinc-900">DropZone</h1>
-        <p class="text-sm text-zinc-500 mt-0.5">極速跨裝置中繼站 ・ 6 小時自動銷毀</p>
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">⚡</span>
+          <h1 class="text-2xl font-bold tracking-tight">DropZone</h1>
+        </div>
+        <p class="text-xs text-zinc-400 mt-1">跨裝置雲端中繼站 ・ 6 小時自動銷毀</p>
       </div>
       <div class="flex items-center gap-2.5 w-full sm:w-auto">
-        <button onclick="loadData()" id="refreshBtn" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-full transition-colors">重新整理</button>
-        <button onclick="clearAll()" id="clearAllBtn" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-full transition-colors">清空全部</button>
+        <button onclick="loadData()" id="refreshBtn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur transition">🔄 重新整理</button>
+        <button onclick="clearAll()" id="clearAllBtn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white rounded-full transition">🗑️ 清空全部</button>
       </div>
     </div>
 
-    <!-- 文字傳送區 -->
-    <div class="apple-card p-6 sm:p-8 space-y-4">
-      <h2 class="text-lg font-medium text-zinc-900">📝 傳送文字</h2>
-      <textarea id="textInput" rows="3" class="apple-input w-full p-3.5 text-sm text-zinc-800 placeholder-zinc-400 resize-none" placeholder="輸入要跨裝置同步的文字或連結..."></textarea>
-      
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-        <input type="password" id="textPassword" class="apple-input px-3.5 py-2 text-sm text-zinc-800 placeholder-zinc-400 sm:w-48" placeholder="設定密碼鎖 (選填)">
-        <button onclick="sendText()" id="sendTextBtn" class="apple-btn px-6 py-2.5 text-sm font-medium">傳送文字</button>
-      </div>
-      
-      <div id="textList" class="space-y-3 pt-4 border-t border-zinc-100"></div>
-    </div>
-
-    <!-- 檔案傳送區 -->
-    <div class="apple-card p-6 sm:p-8 space-y-4">
-      <h2 class="text-lg font-medium text-zinc-900">📁 傳送檔案</h2>
-      <input type="file" id="fileInput" class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-800 hover:file:bg-zinc-200 cursor-pointer"/>
-      
-      <div id="progressContainer" class="hidden space-y-2">
-        <div class="w-full bg-zinc-100 rounded-full h-2 overflow-hidden">
-          <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+    <!-- 區塊一：文字傳送區 (Apple 藍色主題) -->
+    <div class="section-text p-6 sm:p-8 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-sm">📝</span>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">文字剪貼簿專區</h2>
+            <p class="text-xs text-slate-500">快速同步網址、驗證碼或文字片段</p>
+          </div>
         </div>
-        <p id="progressText" class="text-xs text-zinc-400 text-right">0%</p>
+        <span class="text-xs font-semibold px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">TEXT</span>
       </div>
 
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-        <input type="password" id="filePassword" class="apple-input px-3.5 py-2 text-sm text-zinc-800 placeholder-zinc-400 sm:w-48" placeholder="設定密碼鎖 (選填)">
-        <button onclick="uploadFile()" id="uploadBtn" class="apple-btn px-6 py-2.5 text-sm font-medium">開始上傳</button>
+      <!-- 文字輸入內艙 -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+        <textarea id="textInput" rows="3" class="apple-input w-full p-3.5 text-sm text-slate-800 placeholder-slate-400 resize-none" placeholder="在此輸入或貼上要傳送的文字..."></textarea>
+        
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 sm:w-64">
+            <span class="text-slate-400 text-sm">🔒</span>
+            <input type="password" id="textPassword" class="w-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none" placeholder="設定文字密碼鎖 (選填)">
+          </div>
+          <button onclick="sendText()" id="sendTextBtn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">傳送文字</button>
+        </div>
       </div>
 
-      <div id="fileList" class="space-y-3 pt-4 border-t border-zinc-100"></div>
+      <!-- 文字列表 -->
+      <div class="space-y-2.5 pt-2">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">已儲存的文字紀錄</h3>
+        <div id="textList" class="space-y-2.5"></div>
+      </div>
     </div>
+
+    <!-- 區塊二：檔案傳送區 (翡翠綠主題) -->
+    <div class="section-file p-6 sm:p-8 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shadow-sm">📁</span>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">檔案傳輸專區 (不限大小)</h2>
+            <p class="text-xs text-slate-500">直傳 Google Drive 雲端硬碟</p>
+          </div>
+        </div>
+        <span class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">FILE</span>
+      </div>
+
+      <!-- 檔案上傳內艙 -->
+      <div class="bg-emerald-50/40 p-5 rounded-2xl border-2 border-dashed border-emerald-300 space-y-4">
+        <input type="file" id="fileInput" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"/>
+        
+        <div id="progressContainer" class="hidden space-y-1.5 bg-white p-3 rounded-xl border border-emerald-200">
+          <div class="flex justify-between text-xs font-semibold text-emerald-700">
+            <span>正在上傳至 Google Drive...</span>
+            <span id="progressText">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div id="progressBar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 sm:w-64">
+            <span class="text-slate-400 text-sm">🔒</span>
+            <input type="password" id="filePassword" class="w-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none" placeholder="設定檔案密碼鎖 (選填)">
+          </div>
+          <button onclick="uploadFile()" id="uploadBtn" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-sm transition">開始上傳檔案</button>
+        </div>
+      </div>
+
+      <!-- 檔案列表 -->
+      <div class="space-y-2.5 pt-2">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">雲端暫存檔案列表</h3>
+        <div id="fileList" class="space-y-2.5"></div>
+      </div>
+    </div>
+
   </div>
 
   <script>
     // 💡 請在此填入您的 GAS 部署網址 (/exec 結尾)
     const GAS_URL = "https://script.google.com/macros/s/AKfycby494FfbKlcJaeq56kcGxA3947LspZT4Ft-qdewD5aHGcvQ2z2BCN00q44ajzMWnHM-jw/exec";
+
+    // 紀錄已在當前頁面解鎖過的文字內容，避免重新渲染時又被鎖上
+    const unlockedTextsCache = {};
 
     window.onload = loadData;
 
@@ -106,7 +160,7 @@
       try {
         json = JSON.parse(text);
       } catch (e) {
-        throw new Error("後端回應格式錯誤，請確認 GAS 是否已建立新版本部署");
+        throw new Error("後端回應格式錯誤，請確認 GAS 已建立新版本部署");
       }
       if (json.status !== 'ok') throw new Error(json.message);
       return json.data;
@@ -114,14 +168,14 @@
 
     async function loadData() {
       const btn = document.getElementById('refreshBtn');
-      btn.innerText = '同步中...';
+      btn.innerText = '⏳ 同步中...';
       try {
         const data = await callGasApi({ action: 'getItems' });
         renderData(data);
       } catch (err) {
         alert('載入失敗：' + err.message);
       }
-      btn.innerText = '重新整理';
+      btn.innerText = '🔄 重新整理';
     }
 
     function renderData(items) {
@@ -133,32 +187,36 @@
 
       // 渲染文字列表
       if (texts.length === 0) {
-        textContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">目前沒有文字紀錄</p>`;
+        textContainer.innerHTML = `<div class="p-6 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-400 text-center">目前沒有文字紀錄</div>`;
       } else {
         textContainer.innerHTML = texts.map(item => {
-          if (item.hasPassword && !item.content) {
-            // 需要密碼解鎖的狀態
+          // 檢查是否已經在前端解鎖過
+          const displayContent = unlockedTextsCache[item.id] !== undefined ? unlockedTextsCache[item.id] : item.content;
+
+          if (item.hasPassword && displayContent === null) {
             return `
-              <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div class="flex items-center gap-2 text-zinc-500 text-sm">
+              <div class="p-4 bg-amber-50/60 rounded-xl border border-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="flex items-center gap-2 text-amber-800 text-sm font-medium">
                   <span>🔒</span>
-                  <span>此文字受到密碼保護</span>
+                  <span>受密碼保護的隱藏文字</span>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                  <input type="password" id="pwd-${item.id}" class="apple-input px-3 py-1.5 text-xs sm:w-32" placeholder="輸入解鎖密碼">
-                  <button onclick="unlockText('${item.id}')" class="px-3 py-1.5 bg-zinc-900 text-white text-xs rounded-xl hover:bg-zinc-800">解鎖</button>
-                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
+                  <input type="password" id="pwd-${item.id}" class="apple-input px-3 py-1.5 text-xs sm:w-36" placeholder="輸入密碼..." onkeydown="if(event.key==='Enter') unlockText('${item.id}')">
+                  <button onclick="unlockText('${item.id}')" id="unlockBtn-${item.id}" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition">解鎖查看</button>
+                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 hover:bg-rose-100 text-xs font-medium rounded-lg">刪除</button>
                 </div>
               </div>
             `;
           } else {
-            // 已解鎖或無密碼
             return `
-              <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <pre class="text-sm text-zinc-800 whitespace-pre-wrap break-all font-sans flex-1">${escapeHtml(item.content)}</pre>
+              <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="flex-1 min-w-0">
+                  ${item.hasPassword ? '<span class="inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded mb-1">🔓 已解鎖</span>' : ''}
+                  <pre class="text-sm text-slate-800 whitespace-pre-wrap break-all font-sans">${escapeHtml(displayContent)}</pre>
+                </div>
                 <div class="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
-                  <button onclick="navigator.clipboard.writeText(\`${escapeHtml(item.content)}\`).then(()=>alert('已複製到剪貼簿'))" class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-xl hover:bg-zinc-100">複製</button>
-                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
+                  <button onclick="copyText('${ item.id }', \`${escapeBacktick(displayContent)}\`)" id="copyBtn-${item.id}" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-semibold rounded-lg transition">複製文字</button>
+                  <button onclick="deleteItem('${item.id}', 'text')" class="px-2.5 py-1.5 text-rose-600 hover:bg-rose-50 text-xs font-medium rounded-lg">刪除</button>
                 </div>
               </div>
             `;
@@ -168,22 +226,34 @@
 
       // 渲染檔案列表
       if (files.length === 0) {
-        fileContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">目前沒有暫存檔案</p>`;
+        fileContainer.innerHTML = `<div class="p-6 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-400 text-center">目前沒有暫存檔案</div>`;
       } else {
         fileContainer.innerHTML = files.map(f => `
-          <div class="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div class="truncate pr-2">
-              <p class="text-sm font-medium text-zinc-800 truncate flex items-center gap-1.5">
-                ${f.hasPassword ? '🔒' : ''} ${escapeHtml(f.name)}
-              </p>
-              <p class="text-xs text-zinc-400 mt-0.5">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
+              <div class="flex items-center gap-2">
+                <span class="text-base">${f.hasPassword ? '🔒' : '📄'}</span>
+                <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(f.name)}</p>
+                ${f.hasPassword ? '<span class="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">需密碼</span>' : ''}
+              </div>
+              <p class="text-xs text-slate-400 mt-1 pl-6">${(f.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
             <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-              <button onclick="downloadFile('${f.id}', ${f.hasPassword})" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl transition-colors">下載檔案</button>
-              <button onclick="deleteItem('${f.id}', 'file')" class="px-2.5 py-1.5 text-rose-600 text-xs hover:bg-rose-50 rounded-xl">刪除</button>
+              ${f.hasPassword ? `<input type="password" id="filepwd-${f.id}" class="apple-input px-3 py-1.5 text-xs w-32" placeholder="輸入下載密碼" onkeydown="if(event.key==='Enter') downloadFile('${f.id}', true)">` : ''}
+              <button onclick="downloadFile('${f.id}', ${f.hasPassword})" id="dlBtn-${f.id}" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition">下載檔案</button>
+              <button onclick="deleteItem('${f.id}', 'file')" class="px-2.5 py-1.5 text-rose-600 hover:bg-rose-50 text-xs font-medium rounded-lg">刪除</button>
             </div>
           </div>
         `).join('');
+      }
+    }
+
+    async function copyText(id, text) {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById(`copyBtn-${id}`);
+      if (btn) {
+        btn.innerText = '✅ 已複製';
+        setTimeout(() => btn.innerText = '複製文字', 1500);
       }
     }
 
@@ -213,32 +283,50 @@
       btn.disabled = false;
     }
 
+    // 修正版：解鎖文字後直接寫入前端快取並當場展開明文
     async function unlockText(id) {
       const pwdInput = document.getElementById(`pwd-${id}`);
+      const btn = document.getElementById(`unlockBtn-${id}`);
       const password = pwdInput.value.trim();
       if (!password) return alert('請輸入解鎖密碼');
 
+      btn.innerText = '驗證中...';
+      btn.disabled = true;
+
       try {
         const content = await callGasApi({ action: 'unlockText', id: id, password: password });
-        // 直接重新整理列表以顯示解鎖後的內容
-        loadData();
+        unlockedTextsCache[id] = content; // 將解開的明文存入快取
+        const data = await callGasApi({ action: 'getItems' });
+        renderData(data); // 重新渲染時會直接顯示快取內的明文
       } catch (err) {
-        alert(err.message);
+        alert('解鎖失敗：' + err.message);
+        btn.innerText = '解鎖查看';
+        btn.disabled = false;
       }
     }
 
+    // 修正版：直接由欄位讀取密碼並取得已授權的無障礙下載網址
     async function downloadFile(fileId, hasPassword) {
       let password = "";
       if (hasPassword) {
-        password = prompt("此檔案受密碼保護，請輸入下載密碼：");
-        if (password === null) return; // 取消
+        const pwdEl = document.getElementById(`filepwd-${fileId}`);
+        password = pwdEl ? pwdEl.value.trim() : "";
+        if (!password) return alert("請先在左方輸入框填入檔案下載密碼！");
       }
+
+      const btn = document.getElementById(`dlBtn-${fileId}`);
+      const origText = btn.innerText;
+      btn.innerText = '準備中...';
+      btn.disabled = true;
 
       try {
         const url = await callGasApi({ action: 'getFileUrl', fileId: fileId, password: password });
         window.open(url, '_blank');
       } catch (err) {
         alert('下載失敗：' + err.message);
+      } finally {
+        btn.innerText = origText;
+        btn.disabled = false;
       }
     }
 
@@ -340,7 +428,12 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+      return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+    }
+
+    function escapeBacktick(str) {
+      if (!str) return '';
+      return String(str).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
     }
   </script>
 </body>
